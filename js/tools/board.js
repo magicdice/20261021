@@ -11,7 +11,7 @@ App.register({
 
 
       const STORAGE_KEY = "classroom-infinite-whiteboard-v1";
-      const BACKGROUND = "#17211b";
+      let background = document.documentElement.dataset.theme === "light" ? "#f6f7f3" : "#17211b";
       const canvas = el.querySelector("#board-board");
       const ctx = canvas.getContext("2d", { alpha: false });
       const strokesCanvas = document.createElement("canvas");
@@ -117,7 +117,9 @@ App.register({
 
         ctx.save();
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(211, 232, 216, 0.12)";
+        ctx.strokeStyle = background === "#f6f7f3"
+          ? "rgba(49, 74, 59, 0.16)"
+          : "rgba(211, 232, 216, 0.12)";
         ctx.lineWidth = 1 / scale;
         for (let x = startX; x <= right; x += spacing) {
           ctx.moveTo(x, top);
@@ -180,7 +182,7 @@ App.register({
         const height = canvas.height / dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = BACKGROUND;
+        ctx.fillStyle = background;
         ctx.fillRect(0, 0, width, height);
         if (gridEnabled) {
           ctx.save();
@@ -432,6 +434,10 @@ App.register({
         }
       });
       window.addEventListener("resize", resizeCanvas);
+      window.addEventListener("smart-classroom-themechange", event => {
+        background = event.detail.resolved === "light" ? "#f6f7f3" : "#17211b";
+        redraw();
+      });
       new ResizeObserver(() => {
         if (el.clientWidth && el.clientHeight) resizeCanvas();
       }).observe(el);

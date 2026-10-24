@@ -5,7 +5,46 @@
   const navigation = document.getElementById("tool-navigation");
   const panels = document.getElementById("tool-panels");
   const status = document.getElementById("app-status");
+  const themeSelect = document.getElementById("theme-select");
+  const themeStorageKey = "smart-classroom-theme";
+  const systemTheme = window.matchMedia("(prefers-color-scheme: light)");
   let activeTool = null;
+
+  function applyTheme(preference) {
+    const resolved = preference === "system"
+      ? (systemTheme.matches ? "light" : "dark")
+      : preference;
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.style.colorScheme = resolved;
+    document.querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", resolved === "light" ? "#f3f6fb" : "#101522");
+    window.dispatchEvent(new CustomEvent("smart-classroom-themechange", {
+      detail: { preference, resolved }
+    }));
+  }
+
+  function loadThemePreference() {
+    try {
+      const saved = localStorage.getItem(themeStorageKey);
+      return ["system", "light", "dark"].includes(saved) ? saved : "system";
+    } catch (error) {
+      console.warn("無法讀取主題偏好，將跟隨系統設定。", error);
+      status.textContent = "無法讀取主題偏好，暫時跟隨系統設定";
+      return "system";
+    }
+  }
+
+  function setThemePreference(preference) {
+    themeSelect.value = preference;
+    applyTheme(preference);
+    try {
+      localStorage.setItem(themeStorageKey, preference);
+      status.textContent = `已切換為${preference === "system" ? "跟隨系統" : preference === "light" ? "淺色" : "深色"}主題`;
+    } catch (error) {
+      console.warn("無法儲存主題偏好。", error);
+      status.textContent = "主題已切換，但無法儲存偏好設定";
+    }
+  }
 
   function register(tool) {
     if (!tool || !tool.id || !tool.title || !tool.init) {
@@ -79,6 +118,14 @@
     event.preventDefault();
     buttons[nextIndex].focus();
     show(buttons[nextIndex].id.replace("tab-", ""));
+  });
+
+  const initialTheme = loadThemePreference();
+  themeSelect.value = initialTheme;
+  applyTheme(initialTheme);
+  themeSelect.addEventListener("change", () => setThemePreference(themeSelect.value));
+  systemTheme.addEventListener("change", () => {
+    if (themeSelect.value === "system") applyTheme("system");
   });
 
   window.addEventListener("hashchange", () => show(location.hash.slice(1), false));

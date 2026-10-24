@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/tools/score.css">
   <link rel="stylesheet" href="css/tools/board.css">
   <link rel="stylesheet" href="css/tools/irs.css">
+  <link rel="stylesheet" href="css/theme.css">
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script defer src="js/app.js"></script>
@@ -32,7 +33,17 @@
           <small>六個課堂工具，一個工作空間</small>
         </span>
       </a>
-      <p class="header-note">選擇工具開始使用</p>
+      <div class="header-controls">
+        <p class="header-note">選擇工具開始使用</p>
+        <label class="theme-control" for="theme-select">
+          <span>主題</span>
+          <select id="theme-select" aria-label="選擇色彩主題">
+            <option value="system">跟隨系統</option>
+            <option value="light">淺色</option>
+            <option value="dark">深色</option>
+          </select>
+        </label>
+      </div>
     </header>
     <nav class="tool-navigation" id="tool-navigation" aria-label="課堂工具" role="tablist"></nav>
     <main id="tool-panels" class="tool-panels"></main>
