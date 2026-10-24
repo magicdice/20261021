@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090f1c">
+  <title>課堂時間管理系統</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090f1c;
+      --panel: #111c2e;
+      --panel-soft: #17253a;
+      --line: #293b54;
+      --text: #f3f7ff;
+      --muted: #aab8cc;
+      --cyan: #53dcff;
+      --green: #73e2a7;
+      --red: #ff626f;
+      --amber: #ffca70;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% -15%, #1b3151 0, transparent 50%),
+        var(--bg);
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    .app { width: min(1500px, 100%); margin: 0 auto; padding: 24px clamp(16px, 3vw, 44px) 42px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+    .brand { margin: 0; font-size: clamp(1.1rem, 2vw, 1.55rem); letter-spacing: .05em; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .sound-note { color: var(--muted); font-size: .88rem; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: #101a2a;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+      font-weight: 750;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .tab[aria-selected="true"] { color: var(--text); border-color: #3f9db7; background: #153247; box-shadow: inset 0 -3px var(--cyan); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, #111c2e, #0e1726); box-shadow: 0 18px 55px #0003; }
+    .section-heading { margin: 0; font-size: clamp(1.15rem, 2vw, 1.5rem); }
+    .muted { color: var(--muted); }
+    .button {
+      min-height: 48px;
+      border: 1px solid #3a506a;
+      border-radius: 12px;
+      padding: 11px 18px;
+      background: #1a2a40;
+      color: var(--text);
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .12s, filter .12s, background .12s;
+    }
+    .button:hover { filter: brightness(1.15); }
+    .button:active { transform: translateY(1px) scale(.99); }
+    .button.primary { border-color: #3abedb; background: #087b9a; }
+    .button.green { border-color: #45b57c; background: #17653f; }
+    .button.red { border-color: #b95763; background: #642832; }
+    .button.subtle { background: transparent; }
+    .button.small { min-height: 38px; padding: 7px 12px; font-size: .92rem; }
+
+    .exam-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(290px, .75fr); gap: 18px; align-items: start; }
+    .clock-card { min-height: 510px; padding: clamp(22px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; text-align: center; }
+    .date-line { color: #c2d1e6; font-size: clamp(1.15rem, 2.6vw, 1.8rem); letter-spacing: .08em; }
+    .clock-time { margin: 18px 0 10px; color: var(--cyan); font: 700 clamp(4rem, 12vw, 10.3rem)/1 var(--mono); letter-spacing: -.07em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .exam-countdown { margin: 6px 0 24px; font-size: clamp(1.15rem, 2.6vw, 1.8rem); font-weight: 700; }
+    .exam-countdown.warning { color: var(--red); animation: pulse 1.2s ease-in-out infinite alternate; }
+    @keyframes pulse { to { text-shadow: 0 0 22px #ff626f88; } }
+    .exam-summary { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 28px; color: #d9e4f4; font-size: clamp(1rem, 2vw, 1.3rem); }
+    .exam-summary strong { color: white; }
+    .ticker-wrap { overflow: hidden; border: 1px solid #8e6830; border-radius: 12px; margin-top: 24px; padding: 12px 0; background: #2a2113; color: #ffe29b; }
+    .ticker-track { width: max-content; min-width: 100%; display: flex; animation: ticker 28s linear infinite; }
+    .ticker-track span { flex: none; padding-right: 4rem; font-size: clamp(1rem, 2vw, 1.32rem); font-weight: 800; }
+    @keyframes ticker { to { transform: translateX(-50%); } }
+    .settings-card { padding: 22px; }
+    .settings-card h2 { margin: 0 0 18px; }
+    .field { display: grid; gap: 7px; margin: 0 0 15px; }
+    .field label { color: #c8d4e5; font-weight: 700; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid #354963;
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #091321;
+      color: var(--text);
+    }
+    input[type="number"] { font-variant-numeric: tabular-nums; }
+    textarea { min-height: 92px; resize: vertical; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .absent-value { color: var(--amber); font-weight: 850; }
+
+    .bells-layout { display: grid; gap: 18px; }
+    .bell-controls { padding: 22px; }
+    .bell-controls h2 { margin: 0 0 16px; }
+    .bell-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .bell-button { min-height: 125px; font-size: clamp(1.4rem, 3.5vw, 2.25rem); }
+    .bell-button span { display: block; margin-top: 5px; font-size: .85rem; font-weight: 500; opacity: .82; }
+    .schedule-card { padding: 22px; }
+    .schedule-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+    .schedule-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    .switch-label { display: inline-flex; gap: 10px; align-items: center; font-weight: 700; cursor: pointer; }
+    .switch-label input { width: 22px; height: 22px; accent-color: var(--cyan); }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #283a52; text-align: left; }
+    th { color: #aebfd5; font-size: .92rem; }
+    td input { min-width: 100px; }
+    .empty-row { padding: 24px 10px; text-align: center; color: var(--muted); }
+    .schedule-form { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 10px; align-items: end; padding-top: 18px; }
+    .schedule-form .field { margin: 0; }
+    .import-label { display: inline-flex; align-items: center; }
+    .import-label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+    .tomato-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .55fr); gap: 18px; align-items: stretch; }
+    .tomato-main { min-height: 470px; padding: clamp(25px, 5vw, 60px); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .phase-pill { border: 1px solid #3787a0; border-radius: 99px; padding: 8px 18px; color: var(--cyan); font-weight: 800; letter-spacing: .08em; }
+    .phase-pill.break { border-color: #4c9b68; color: var(--green); }
+    .tomato-time { margin: 25px 0 15px; color: white; font: 750 clamp(5rem, 13vw, 10rem)/1 var(--mono); letter-spacing: -.07em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .round-count { color: #c1cfe2; font-size: clamp(1.1rem, 2.4vw, 1.6rem); }
+    .tomato-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 27px; }
+    .tomato-controls .button { min-width: 112px; min-height: 54px; font-size: 1.08rem; }
+    .tomato-settings { padding: 22px; }
+    .tomato-settings h2 { margin: 0 0 18px; }
+    .stat-card { margin-top: 20px; padding: 18px; border: 1px solid #31465f; border-radius: 14px; background: #0c1726; }
+    .stat-card strong { display: block; margin-top: 5px; color: var(--green); font: 750 1.8rem var(--mono); font-variant-numeric: tabular-nums; }
+    .status-message { min-height: 1.5em; margin: 16px 0 0; color: var(--amber); text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .exit-fullscreen { display: none; position: fixed; top: 12px; right: 12px; z-index: 5; }
+
+    .fullscreen-mode .app { width: 100%; max-width: none; min-height: 100vh; padding: clamp(16px, 3vh, 36px) clamp(14px, 4vw, 64px); display: flex; flex-direction: column; justify-content: center; }
+    .fullscreen-mode .topbar, .fullscreen-mode .tabs, .fullscreen-mode .settings-card, .fullscreen-mode .bell-controls, .fullscreen-mode .schedule-card, .fullscreen-mode .tomato-settings, .fullscreen-mode .status-message { display: none !important; }
+    .fullscreen-mode .panel.active { display: block; width: 100%; }
+    .fullscreen-mode .exam-layout, .fullscreen-mode .tomato-layout { display: block; }
+    .fullscreen-mode .clock-card { min-height: 0; padding: 2vh 0; border: 0; box-shadow: none; background: transparent; }
+    .fullscreen-mode .clock-time { font-size: clamp(5rem, 18vw, 17rem); }
+    .fullscreen-mode .date-line { font-size: clamp(1.4rem, 3vw, 2.5rem); }
+    .fullscreen-mode .exam-countdown { font-size: clamp(1.5rem, 3.2vw, 2.8rem); }
+    .fullscreen-mode .exam-summary { font-size: clamp(1.2rem, 2.5vw, 2rem); }
+    .fullscreen-mode .ticker-wrap { margin-top: 4vh; }
+    .fullscreen-mode .ticker-track span { font-size: clamp(1.4rem, 3vw, 2.3rem); }
+    .fullscreen-mode .tomato-main { min-height: 90vh; border: 0; background: transparent; box-shadow: none; }
+    .fullscreen-mode .tomato-time { font-size: clamp(7rem, 24vw, 20rem); }
+    .fullscreen-mode .exit-fullscreen { display: block; }
+    body.fullscreen-mode { overflow: hidden; }
+
+    @media (max-width: 850px) {
+      .exam-layout, .tomato-layout { grid-template-columns: 1fr; }
+      .clock-card { min-height: 400px; }
+      .tomato-main { min-height: 390px; }
+    }
+    @media (max-width: 560px) {
+      .app { padding: 16px 12px 30px; }
+      .topbar { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .sound-note { font-size: .8rem; }
+      .tabs { gap: 6px; }
+      .tab { padding: 12px 6px; font-size: .92rem; }
+      .clock-time { font-size: clamp(3.1rem, 14vw, 5rem); }
+      .clock-card { min-height: 350px; }
+      .bell-buttons { grid-template-columns: 1fr; }
+      .bell-button { min-height: 90px; }
+      .schedule-form { grid-template-columns: 1fr 1fr; }
+      .schedule-form .period-name { grid-column: 1 / -1; }
+      .tomato-time { font-size: clamp(4.6rem, 19vw, 7rem); }
+      .two-col { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <h1 class="brand">課堂時間管理系統</h1>
+      <div class="top-actions">
+        <span class="sound-note">首次播放音效時，請點擊任一打鐘或計時按鈕以啟用瀏覽器音效。</span>
+        <button class="button small subtle" id="fullscreenButton" type="button">⛶ 全螢幕投影</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="時間管理模組">
+      <button class="tab" id="tab-exam" role="tab" aria-selected="true" aria-controls="panel-exam" type="button">考試大鐘</button>
+      <button class="tab" id="tab-bells" role="tab" aria-selected="false" aria-controls="panel-bells" type="button">上下課鐘</button>
+      <button class="tab" id="tab-tomato" role="tab" aria-selected="false" aria-controls="panel-tomato" type="button">讀書番茄鐘</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="panel-exam" role="tabpanel" aria-labelledby="tab-exam">
+        <div class="exam-layout">
+          <div class="card clock-card">
+            <div class="date-line" id="currentDate">--年--月--日 星期-</div>
+            <div class="clock-time" id="currentTime" aria-label="現在時間">--:--:--</div>
+            <div class="exam-countdown" id="examCountdown">請設定考試結束時間</div>
+            <div class="exam-summary">
+              <span>科目：<strong id="summarySubject">未設定</strong></span>
+              <span>考試時間：<strong id="summaryTime">未設定</strong></span>
+              <span>監考：<strong id="summaryTeacher">未設定</strong></span>
+              <span>缺考：<strong class="absent-value" id="summaryAbsent">0 人</strong></span>
+            </div>
+            <div class="ticker-wrap" aria-label="考試注意事項">
+              <div class="ticker-track" id="tickerTrack"><span>請設定考試注意事項</span><span aria-hidden="true">請設定考試注意事項</span></div>
+            </div>
+          </div>
+          <form class="card settings-card" id="examForm">
+            <h2 class="section-heading">考試資訊設定</h2>
+            <div class="field">
+              <label for="examSubject">考試科目</label>
+              <input id="examSubject" name="subject" type="text" placeholder="例如：數學">
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="examStart">開始時間</label>
+                <input id="examStart" name="start" type="time">
+              </div>
+              <div class="field">
+                <label for="examEnd">結束時間</label>
+                <input id="examEnd" name="end" type="time">
+              </div>
+            </div>
+            <div class="field">
+              <label for="examTeacher">監考老師</label>
+              <input id="examTeacher" name="teacher" type="text" placeholder="例如：王老師">
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="expectedCount">應到人數</label>
+                <input id="expectedCount" name="expected" type="number" min="0" step="1" value="0">
+              </div>
+              <div class="field">
+                <label for="actualCount">實到人數</label>
+                <input id="actualCount" name="actual" type="number" min="0" step="1" value="0">
+              </div>
+            </div>
+            <div class="field">
+              <label>缺考人數（自動計算）</label>
+              <div class="absent-value" id="absentCount">0 人</div>
+            </div>
+            <div class="field">
+              <label for="examNotice">考試注意事項</label>
+              <textarea id="examNotice" name="notice" placeholder="例如：請將手機關機，考試結束前不得離場。"></textarea>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-bells" role="tabpanel" aria-labelledby="tab-bells" hidden>
+        <div class="bells-layout">
+          <div class="card bell-controls">
+            <h2 class="section-heading">手動打鐘</h2>
+            <div class="bell-buttons">
+              <button class="button green bell-button" id="classBellButton" type="button">🔔 上課鈴<span>開始上課</span></button>
+              <button class="button primary bell-button" id="dismissalBellButton" type="button">🔔 下課鈴<span>下課休息</span></button>
+            </div>
+          </div>
+          <div class="card schedule-card">
+            <div class="schedule-header">
+              <h2 class="section-heading">課表管理</h2>
+              <div class="schedule-actions">
+                <label class="switch-label"><input id="autoBellToggle" type="checkbox"> 啟用自動打鐘</label>
+                <label class="button small import-label" for="csvFile">匯入 CSV 課表<input id="csvFile" type="file" accept=".csv,text/csv"></label>
+              </div>
+            </div>
+            <p class="muted">CSV 每行格式：節次名稱,上課時間,下課時間（例如：第一節,08:10,09:00）</p>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>節次</th><th>上課時間</th><th>下課時間</th><th>操作</th></tr></thead>
+                <tbody id="scheduleRows"></tbody>
+              </table>
+            </div>
+            <form class="schedule-form" id="scheduleForm">
+              <div class="field period-name"><label for="periodName">節次名稱</label><input id="periodName" type="text" placeholder="例如：第一節" required></div>
+              <div class="field"><label for="periodStart">上課時間</label><input id="periodStart" type="time" required></div>
+              <div class="field"><label for="periodEnd">下課時間</label><input id="periodEnd" type="time" required></div>
+              <button class="button primary" type="submit">新增時段</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-tomato" role="tabpanel" aria-labelledby="tab-tomato" hidden>
+        <div class="tomato-layout">
+          <div class="card tomato-main">
+            <div class="phase-pill" id="phaseLabel">專注時間</div>
+            <div class="tomato-time" id="tomatoTime" aria-live="off">25:00</div>
+            <div class="round-count">第 <strong id="roundNumber">1</strong> 輪</div>
+            <div class="tomato-controls">
+              <button class="button green" id="startPauseButton" type="button">開始</button>
+              <button class="button" id="resetButton" type="button">重設</button>
+              <button class="button primary" id="skipButton" type="button">跳過</button>
+            </div>
+          </div>
+          <div class="card tomato-settings">
+            <h2 class="section-heading">番茄鐘設定</h2>
+            <div class="field">
+              <label for="focusMinutes">專注時間（分鐘）</label>
+              <input id="focusMinutes" type="number" min="1" max="180" step="1" value="25">
+            </div>
+            <div class="field">
+              <label for="breakMinutes">休息時間（分鐘）</label>
+              <input id="breakMinutes" type="number" min="1" max="60" step="1" value="5">
+            </div>
+            <div class="stat-card">
+              <span class="muted">今日累計專注時間</span>
+              <strong id="focusTotal">0 分鐘</strong>
+            </div>
+            <p class="muted">計時器依系統時鐘校準；切換頁籤或重新整理後仍會接續計時。</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <p class="status-message" id="statusMessage" role="status" aria-live="polite"></p>
+    <button class="button small exit-fullscreen" id="exitFullscreenButton" type="button">退出全螢幕</button>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "classroom-time-manager-v1";
+      const defaults = {
+        exam: { subject: "", start: "", end: "", teacher: "", expected: 0, actual: 0, notice: "" },
+        schedule: [],
+        autoBell: false,
+        lastAutoMinute: "",
+        tomato: {
+          focusMinutes: 25,
+          breakMinutes: 5,
+          phase: "focus",
+          round: 1,
+          running: false,
+          remainingMs: 25 * 60 * 1000,
+          deadline: null,
+          phaseElapsedMs: 0,
+          focusDate: "",
+          focusTotalMs: 0
+        }
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const statusMessage = $("#statusMessage");
+      let statusTimer;
+      let audioContext;
+      let state = loadState();
+
+      function announce(message) {
+        statusMessage.textContent = message;
+        clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => { statusMessage.textContent = ""; }, 5000);
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return structuredClone(defaults);
+          const saved = JSON.parse(raw);
+          return {
+            ...structuredClone(defaults),
+            ...saved,
+            exam: { ...defaults.exam, ...(saved.exam || {}) },
+            schedule: Array.isArray(saved.schedule) ? saved.schedule : [],
+            tomato: { ...defaults.tomato, ...(saved.tomato || {}) }
+          };
+        } catch (error) {
+          console.error("無法讀取已儲存的設定。", error);
+          announce("無法讀取已儲存設定，將使用預設值。");
+          return structuredClone(defaults);
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+          console.error("無法儲存設定。", error);
+          announce("無法儲存設定，請確認瀏覽器儲存空間與權限。");
+        }
+      }
+
+      function setDefaultFormValues() {
+        const e = state.exam;
+        $("#examSubject").value = e.subject;
+        $("#examStart").value = e.start;
+        $("#examEnd").value = e.end;
+        $("#examTeacher").value = e.teacher;
+        $("#expectedCount").value = e.expected;
+        $("#actualCount").value = e.actual;
+        $("#examNotice").value = e.notice;
+        $("#autoBellToggle").checked = Boolean(state.autoBell);
+        $("#focusMinutes").value = state.tomato.focusMinutes;
+        $("#breakMinutes").value = state.tomato.breakMinutes;
+      }
+
+      function updateExamFromForm() {
+        state.exam = {
+          subject: $("#examSubject").value,
+          start: $("#examStart").value,
+          end: $("#examEnd").value,
+          teacher: $("#examTeacher").value,
+          expected: parseNonNegative($("#expectedCount").value),
+          actual: parseNonNegative($("#actualCount").value),
+          notice: $("#examNotice").value
+        };
+        $("#absentCount").textContent = `${Math.max(0, state.exam.expected - state.exam.actual)} 人`;
+        saveState();
+        renderExamSummary();
+      }
+
+      function parseNonNegative(value) {
+        const number = Number.parseInt(value, 10);
+        return Number.isFinite(number) ? Math.max(0, number) : 0;
+      }
+
+      function renderExamSummary() {
+        const { subject, start, end, teacher, expected, actual, notice } = state.exam;
+        $("#summarySubject").textContent = subject.trim() || "未設定";
+        $("#summaryTime").textContent = start && end ? `${start}～${end}` : "未設定";
+        $("#summaryTeacher").textContent = teacher.trim() || "未設定";
+        const absent = Math.max(0, Number(expected) - Number(actual));
+        $("#summaryAbsent").textContent = `${absent} 人`;
+        $("#absentCount").textContent = `${absent} 人`;
+        const message = notice.trim() || "請設定考試注意事項";
+        $("#tickerTrack").innerHTML = "";
+        for (let index = 0; index < 2; index += 1) {
+          const span = document.createElement("span");
+          span.textContent = message;
+          if (index === 1) span.setAttribute("aria-hidden", "true");
+          $("#tickerTrack").append(span);
+        }
+      }
+
+      function getExamEnd(now) {
+        const end = state.exam.end;
+        if (!/^\d{2}:\d{2}$/.test(end)) return null;
+        const [hour, minute] = end.split(":").map(Number);
+        if (hour > 23 || minute > 59) return null;
+        const target = new Date(now);
+        target.setHours(hour, minute, 0, 0);
+        if (state.exam.start && end < state.exam.start) target.setDate(target.getDate() + 1);
+        return target;
+      }
+
+      function renderClock(now = new Date()) {
+        const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+        $("#currentDate").textContent = `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, "0")}月${String(now.getDate()).padStart(2, "0")}日 ${weekdays[now.getDay()]}`;
+        $("#currentTime").textContent = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+        const countdown = $("#examCountdown");
+        const target = getExamEnd(now);
+        countdown.classList.remove("warning");
+        if (!target) {
+          countdown.textContent = "請設定考試結束時間";
+          return;
+        }
+        const milliseconds = target.getTime() - now.getTime();
+        if (milliseconds <= 0) {
+          countdown.textContent = "考試時間已結束";
+          return;
+        }
+        const minutes = Math.ceil(milliseconds / 60000);
+        countdown.textContent = `距離考試結束還有 ${minutes} 分鐘`;
+        if (minutes <= 10) countdown.classList.add("warning");
+      }
+
+      function renderSchedule() {
+        const tbody = $("#scheduleRows");
+        tbody.replaceChildren();
+        if (!state.schedule.length) {
+          const row = tbody.insertRow();
+          const cell = row.insertCell();
+          cell.colSpan = 4;
+          cell.className = "empty-row";
+          cell.textContent = "尚未新增課表時段";
+          return;
+        }
+        state.schedule.forEach((entry, index) => {
+          const row = tbody.insertRow();
+          const name = row.insertCell();
+          const start = row.insertCell();
+          const end = row.insertCell();
+          const action = row.insertCell();
+          name.textContent = entry.name;
+          start.textContent = entry.start;
+          end.textContent = entry.end;
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "button small red";
+          remove.textContent = "刪除";
+          remove.setAttribute("aria-label", `刪除${entry.name}時段`);
+          remove.addEventListener("click", () => {
+            state.schedule.splice(index, 1);
+            saveState();
+            renderSchedule();
+          });
+          action.append(remove);
+        });
+      }
+
+      function enableAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+          announce("此瀏覽器不支援 Web Audio API，無法播放音效。");
+          return null;
+        }
+        if (!audioContext) audioContext = new AudioContextClass();
+        if (audioContext.state === "suspended") audioContext.resume().catch((error) => {
+          console.error("無法啟用瀏覽器音效。", error);
+          announce("無法啟用瀏覽器音效，請再次點擊播放按鈕。");
+        });
+        return audioContext;
+      }
+
+      function playSequence(notes, type = "sine", volume = 0.18) {
+        const context = enableAudio();
+        if (!context) return;
+        const startAt = context.currentTime + 0.03;
+        notes.forEach((note) => {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(note.frequency, startAt + note.offset);
+          gain.gain.setValueAtTime(0.0001, startAt + note.offset);
+          gain.gain.exponentialRampToValueAtTime(volume, startAt + note.offset + 0.025);
+          gain.gain.setValueAtTime(volume, startAt + note.offset + note.duration * 0.72);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startAt + note.offset + note.duration);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start(startAt + note.offset);
+          oscillator.stop(startAt + note.offset + note.duration + 0.02);
+        });
+      }
+
+      function playBell(kind) {
+        if (kind === "class") {
+          playSequence([
+            { frequency: 880, offset: 0, duration: 0.42 },
+            { frequency: 1174.66, offset: 0.48, duration: 0.62 },
+            { frequency: 880, offset: 1.18, duration: 0.42 },
+            { frequency: 1174.66, offset: 1.66, duration: 0.72 }
+          ], "sine", 0.2);
+        } else {
+          playSequence([
+            { frequency: 783.99, offset: 0, duration: 0.7 },
+            { frequency: 659.25, offset: 0.76, duration: 0.7 },
+            { frequency: 523.25, offset: 1.52, duration: 1.0 }
+          ], "triangle", 0.2);
+        }
+      }
+
+      function checkAutomaticBell(now) {
+        if (!state.autoBell || now.getSeconds() !== 0) return;
+        const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+        if (state.lastAutoMinute === minuteKey) return;
+        state.lastAutoMinute = minuteKey;
+        saveState();
+        const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+        state.schedule.forEach((entry) => {
+          if (entry.start === time) playBell("class");
+          if (entry.end === time) playBell("dismissal");
+        });
+      }
+
+      function parseCsvLine(line) {
+        const fields = [];
+        let field = "";
+        let quoted = false;
+        for (let index = 0; index < line.length; index += 1) {
+          const char = line[index];
+          if (char === '"') {
+            if (quoted && line[index + 1] === '"') {
+              field += '"';
+              index += 1;
+            } else {
+              quoted = !quoted;
+            }
+          } else if (char === "," && !quoted) {
+            fields.push(field.trim());
+            field = "";
+          } else {
+            field += char;
+          }
+        }
+        fields.push(field.trim());
+        return fields;
+      }
+
+      function validTime(value) {
+        if (!/^\d{2}:\d{2}$/.test(value)) return false;
+        const [hour, minute] = value.split(":").map(Number);
+        return hour <= 23 && minute <= 59;
+      }
+
+      async function importCsv(file) {
+        if (!file) return;
+        try {
+          const text = (await file.text()).replace(/^\uFEFF/, "");
+          const lines = text.split(/\r?\n/).filter((line) => line.trim());
+          const imported = [];
+          const invalid = [];
+          lines.forEach((line, index) => {
+            const columns = parseCsvLine(line);
+            if (index === 0 && columns[0]?.toLowerCase() === "節次") return;
+            if (columns.length < 3 || !columns[0] || !validTime(columns[1]) || !validTime(columns[2])) {
+              invalid.push(index + 1);
+              return;
+            }
+            imported.push({ id: createId(), name: columns[0], start: columns[1], end: columns[2] });
+          });
+          if (!imported.length) {
+            announce(invalid.length ? `CSV 沒有有效時段，請檢查第 ${invalid.join("、")} 行。` : "CSV 檔案沒有可匯入的時段。");
+            return;
+          }
+          state.schedule = imported;
+          saveState();
+          renderSchedule();
+          announce(`已匯入 ${imported.length} 個課表時段${invalid.length ? `；略過第 ${invalid.join("、")} 行` : ""}。`);
+        } catch (error) {
+          console.error("讀取 CSV 檔案失敗。", error);
+          announce("無法讀取 CSV 檔案，請確認檔案格式與權限。");
+        } finally {
+          $("#csvFile").value = "";
+        }
+      }
+
+      function createId() {
+        return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      function getTodayKey(now = new Date()) {
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      function syncFocusDate(now = new Date()) {
+        const key = getTodayKey(now);
+        if (state.tomato.focusDate !== key) {
+          state.tomato.focusDate = key;
+          state.tomato.focusTotalMs = 0;
+        }
+      }
+
+      function normalizeTomato() {
+        const t = state.tomato;
+        if (!["focus", "break"].includes(t.phase)) t.phase = "focus";
+        t.focusMinutes = clampInteger(t.focusMinutes, 1, 180, 25);
+        t.breakMinutes = clampInteger(t.breakMinutes, 1, 60, 5);
+        t.round = clampInteger(t.round, 1, 100000, 1);
+        t.phaseElapsedMs = Math.max(0, Number(t.phaseElapsedMs) || 0);
+        t.focusTotalMs = Math.max(0, Number(t.focusTotalMs) || 0);
+        t.remainingMs = Math.max(0, Number(t.remainingMs) || t[`${t.phase}Minutes`] * 60000);
+        if (t.running && (!Number.isFinite(Number(t.deadline)))) {
+          t.running = false;
+          t.deadline = null;
+        }
+      }
+
+      function clampInteger(value, minimum, maximum, fallback) {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
+      }
+
+      function currentRemaining(now = Date.now()) {
+        const t = state.tomato;
+        return t.running ? Math.max(0, Number(t.deadline) - now) : t.remainingMs;
+      }
+
+      function addFocusTime(milliseconds, now = new Date()) {
+        if (state.tomato.phase !== "focus" || milliseconds <= 0) return;
+        syncFocusDate(now);
+        state.tomato.focusTotalMs += milliseconds;
+      }
+
+      function transitionTomato() {
+        const t = state.tomato;
+        if (t.phase === "focus") {
+          t.phase = "break";
+        } else {
+          t.phase = "focus";
+          t.round += 1;
+        }
+        t.phaseElapsedMs = 0;
+        t.remainingMs = (t.phase === "focus" ? t.focusMinutes : t.breakMinutes) * 60000;
+        t.deadline = null;
+        t.running = false;
+        saveState();
+      }
+
+      function updateTomato(now = Date.now()) {
+        const t = state.tomato;
+        syncFocusDate(new Date(now));
+        if (t.running) {
+          const remaining = currentRemaining(now);
+          if (t.phase === "focus") {
+            const elapsed = Math.max(0, t.remainingMs - remaining);
+            const additional = elapsed - t.phaseElapsedMs;
+            if (additional > 0) {
+              addFocusTime(additional, new Date(now));
+              t.phaseElapsedMs = elapsed;
+            }
+          }
+          if (remaining <= 0) {
+            playSequence([
+              { frequency: 880, offset: 0, duration: 0.28 },
+              { frequency: 1174.66, offset: 0.34, duration: 0.42 },
+              { frequency: 1567.98, offset: 0.82, duration: 0.58 }
+            ], "sine", 0.22);
+            if (t.phase === "focus") {
+              t.phase = "break";
+              t.phaseElapsedMs = 0;
+              t.remainingMs = t.breakMinutes * 60000;
+              t.deadline = now + t.remainingMs;
+            } else {
+              t.phase = "focus";
+              t.round += 1;
+              t.phaseElapsedMs = 0;
+              t.remainingMs = t.focusMinutes * 60000;
+              t.deadline = now + t.remainingMs;
+            }
+          }
+        }
+        renderTomato(now);
+        saveState();
+      }
+
+      function renderTomato(now = Date.now()) {
+        const t = state.tomato;
+        const remaining = Math.ceil(currentRemaining(now) / 1000);
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        $("#tomatoTime").textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        $("#phaseLabel").textContent = t.phase === "focus" ? "專注時間" : "休息時間";
+        $("#phaseLabel").classList.toggle("break", t.phase === "break");
+        $("#roundNumber").textContent = t.round;
+        $("#startPauseButton").textContent = t.running ? "暫停" : "開始";
+        $("#startPauseButton").classList.toggle("green", !t.running);
+        $("#focusTotal").textContent = `${Math.floor(t.focusTotalMs / 60000)} 分鐘`;
+      }
+
+      function startOrPauseTomato() {
+        const t = state.tomato;
+        const now = Date.now();
+        if (t.running) {
+          const remaining = currentRemaining(now);
+          if (t.phase === "focus") {
+            const elapsed = Math.max(0, t.remainingMs - remaining);
+            addFocusTime(elapsed - t.phaseElapsedMs);
+            t.phaseElapsedMs = elapsed;
+          }
+          t.remainingMs = remaining;
+          t.phaseElapsedMs = 0;
+          t.running = false;
+          t.deadline = null;
+        } else {
+          if (t.remainingMs <= 0) t.remainingMs = (t.phase === "focus" ? t.focusMinutes : t.breakMinutes) * 60000;
+          t.deadline = now + t.remainingMs;
+          t.phaseElapsedMs = 0;
+          t.running = true;
+          enableAudio();
+        }
+        saveState();
+        renderTomato(now);
+      }
+
+      function resetTomato() {
+        const t = state.tomato;
+        t.running = false;
+        t.deadline = null;
+        t.phaseElapsedMs = 0;
+        t.remainingMs = (t.phase === "focus" ? t.focusMinutes : t.breakMinutes) * 60000;
+        saveState();
+        renderTomato();
+      }
+
+      function skipTomato() {
+        const t = state.tomato;
+        const wasRunning = t.running;
+        if (t.running && t.phase === "focus") {
+          const remaining = currentRemaining();
+          const elapsed = Math.max(0, t.remainingMs - remaining);
+          addFocusTime(elapsed - t.phaseElapsedMs);
+        }
+        transitionTomato();
+        if (wasRunning) {
+          t.running = true;
+          t.deadline = Date.now() + t.remainingMs;
+        }
+        saveState();
+        renderTomato();
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement) {
+            document.body.classList.add("fullscreen-mode");
+            const app = $("#app");
+            if (app.requestFullscreen) await app.requestFullscreen();
+            else announce("此瀏覽器不支援全螢幕模式。");
+          } else {
+            await document.exitFullscreen();
+          }
+        } catch (error) {
+          document.body.classList.remove("fullscreen-mode");
+          console.error("無法切換全螢幕模式。", error);
+          announce("無法進入全螢幕，請確認瀏覽器權限。");
+        }
+      }
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach((item) => item.setAttribute("aria-selected", String(item === tab)));
+          document.querySelectorAll(".panel").forEach((panel) => {
+            const active = panel.id === tab.getAttribute("aria-controls");
+            panel.classList.toggle("active", active);
+            panel.hidden = !active;
+          });
+          if (document.body.classList.contains("fullscreen-mode") && !document.fullscreenElement) {
+            document.body.classList.remove("fullscreen-mode");
+          }
+        });
+      });
+
+      $("#examForm").addEventListener("input", updateExamFromForm);
+      $("#scheduleForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const entry = {
+          id: createId(),
+          name: $("#periodName").value.trim(),
+          start: $("#periodStart").value,
+          end: $("#periodEnd").value
+        };
+        if (!entry.name || !validTime(entry.start) || !validTime(entry.end)) {
+          announce("請填寫節次名稱及有效的上課、下課時間。");
+          return;
+        }
+        state.schedule.push(entry);
+        saveState();
+        renderSchedule();
+        event.currentTarget.reset();
+      });
+      $("#classBellButton").addEventListener("click", () => playBell("class"));
+      $("#dismissalBellButton").addEventListener("click", () => playBell("dismissal"));
+      $("#autoBellToggle").addEventListener("change", (event) => {
+        state.autoBell = event.currentTarget.checked;
+        saveState();
+        if (state.autoBell) enableAudio();
+      });
+      $("#csvFile").addEventListener("change", (event) => importCsv(event.currentTarget.files[0]));
+      $("#focusMinutes").addEventListener("change", (event) => {
+        const value = clampInteger(event.currentTarget.value, 1, 180, 25);
+        event.currentTarget.value = value;
+        state.tomato.focusMinutes = value;
+        if (state.tomato.phase === "focus" && !state.tomato.running) state.tomato.remainingMs = value * 60000;
+        saveState();
+        renderTomato();
+      });
+      $("#breakMinutes").addEventListener("change", (event) => {
+        const value = clampInteger(event.currentTarget.value, 1, 60, 5);
+        event.currentTarget.value = value;
+        state.tomato.breakMinutes = value;
+        if (state.tomato.phase === "break" && !state.tomato.running) state.tomato.remainingMs = value * 60000;
+        saveState();
+        renderTomato();
+      });
+      $("#startPauseButton").addEventListener("click", startOrPauseTomato);
+      $("#resetButton").addEventListener("click", resetTomato);
+      $("#skipButton").addEventListener("click", skipTomato);
+      $("#fullscreenButton").addEventListener("click", toggleFullscreen);
+      $("#exitFullscreenButton").addEventListener("click", toggleFullscreen);
+      document.addEventListener("fullscreenchange", () => {
+        document.body.classList.toggle("fullscreen-mode", Boolean(document.fullscreenElement));
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          renderClock();
+          updateTomato();
+        }
+      });
+
+      normalizeTomato();
+      syncFocusDate();
+      setDefaultFormValues();
+      renderExamSummary();
+      renderSchedule();
+      renderClock();
+      renderTomato();
+      setInterval(() => {
+        const now = new Date();
+        renderClock(now);
+        checkAutomaticBell(now);
+        updateTomato(now.getTime());
+      }, 250);
+    })();
+  </script>
+</body>
+</html>

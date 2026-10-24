@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101412">
+  <title>課堂小組倒數計時器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101412;
+      --surface: #191f1c;
+      --surface-raised: #202824;
+      --line: #303b35;
+      --text: #f1f5f2;
+      --muted: #a2b0a8;
+      --green: #81f0b5;
+      --green-strong: #35d98c;
+      --red: #ff4b58;
+      --amber: #ffc66e;
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 70% 45%, rgba(53, 217, 140, .075), transparent 45%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      width: min(1440px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 28px clamp(18px, 4vw, 56px) 34px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(129, 240, 181, .3);
+      border-radius: 14px;
+      background: rgba(129, 240, 181, .1);
+      color: var(--green);
+    }
+
+    .brand-mark svg { width: 23px; height: 23px; }
+    .brand h1 { margin: 0; font-size: clamp(16px, 2vw, 20px); font-weight: 720; letter-spacing: .02em; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+    .top-actions, .mode-switch, .control-row, .preset-grid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-button, .secondary-button, .primary-button, .preset-button, .mode-button, .group-action {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    button:hover { border-color: #62736a; }
+    button:active { transform: translateY(1px); }
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(129, 240, 181, .55);
+      outline-offset: 2px;
+    }
+
+    .icon-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .icon-button svg { width: 17px; height: 17px; }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: minmax(270px, 360px) minmax(0, 1fr);
+      gap: clamp(26px, 5vw, 76px);
+      align-items: center;
+      flex: 1;
+    }
+
+    .settings-panel {
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(32, 40, 36, .96), rgba(25, 31, 28, .96));
+      box-shadow: 0 20px 55px rgba(0, 0, 0, .18);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .settings-panel h2 { margin: 0 0 22px; font-size: 23px; letter-spacing: -.02em; }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 4px;
+      margin-bottom: 24px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #131815;
+    }
+
+    .mode-button {
+      min-height: 40px;
+      border-color: transparent;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .mode-button[aria-pressed="true"] {
+      border-color: #3a5145;
+      background: #26352d;
+      color: var(--green);
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 10px;
+      color: #d5ded8;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .time-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap input {
+      width: 100%;
+      height: 54px;
+      padding: 0 48px 0 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #121714;
+      color: var(--text);
+      font-size: 19px;
+      font-variant-numeric: tabular-nums;
+    }
+    .input-wrap span {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 12px;
+      pointer-events: none;
+    }
+    .input-error {
+      margin: 8px 0 0;
+      color: #ff8991;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .preset-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 10px;
+      color: #d5ded8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .preset-heading span:last-child { color: var(--muted); font-size: 11px; font-weight: 500; }
+    .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .preset-button {
+      min-height: 39px;
+      border-radius: 10px;
+      color: #c5d0c9;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .preset-button[aria-pressed="true"] {
+      border-color: rgba(129, 240, 181, .48);
+      background: rgba(129, 240, 181, .12);
+      color: var(--green);
+    }
+
+    .multi-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 22px;
+      padding-top: 19px;
+      border-top: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .toggle-copy strong { display: block; font-size: 13px; }
+    .toggle-copy small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .multi-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .switch {
+      position: relative;
+      width: 43px;
+      height: 25px;
+      flex: 0 0 auto;
+      border: 1px solid #46534b;
+      border-radius: 20px;
+      background: #29312c;
+      transition: background .2s ease;
+    }
+    .switch::after {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: #a8b3ac;
+      content: "";
+      transition: transform .2s ease, background .2s ease;
+    }
+    .multi-toggle input:checked + .switch { background: #286044; }
+    .multi-toggle input:checked + .switch::after { transform: translateX(18px); background: var(--green); }
+    .multi-toggle input:focus-visible + .switch { outline: 3px solid rgba(129, 240, 181, .55); outline-offset: 2px; }
+
+    .keyboard-hint {
+      margin: 18px 0 0;
+      color: #849188;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+    kbd {
+      padding: 2px 6px;
+      border: 1px solid #46534b;
+      border-radius: 5px;
+      background: #171d19;
+      color: #c4d0c8;
+      font-family: inherit;
+      font-size: 10px;
+    }
+
+    .timer-area {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 0;
+    }
+
+    .single-timer { width: min(100%, 620px); text-align: center; }
+    .timer-kicker {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .18em;
+    }
+    .ring-shell {
+      position: relative;
+      width: min(63vh, 43vw, 510px);
+      min-width: 250px;
+      aspect-ratio: 1;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+    }
+    .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+    .ring-track, .ring-progress {
+      fill: none;
+      stroke-width: 10;
+    }
+    .ring-track { stroke: #29332d; }
+    .ring-progress {
+      stroke: url(#ringGradient);
+      stroke-linecap: round;
+      transition: stroke-dashoffset .12s linear, stroke .2s ease;
+      filter: drop-shadow(0 0 9px rgba(53, 217, 140, .28));
+    }
+    .timer-content { position: relative; z-index: 1; width: 100%; }
+    .time-display {
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: clamp(62px, 10vw, 124px);
+      font-weight: 720;
+      letter-spacing: -.085em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 4px 30px rgba(0, 0, 0, .25);
+    }
+    .timer-status {
+      min-height: 26px;
+      margin: 17px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 650;
+    }
+    .timer-status.complete { color: var(--red); font-size: 20px; }
+    .timer-status.running { color: var(--green); }
+    .timer-actions { justify-content: center; margin-top: 22px; }
+    .primary-button, .secondary-button {
+      min-width: 130px;
+      min-height: 51px;
+      padding: 0 21px;
+      border-radius: 13px;
+      font-weight: 750;
+    }
+    .primary-button {
+      border-color: var(--green-strong);
+      background: var(--green-strong);
+      color: #102218;
+      box-shadow: 0 7px 24px rgba(53, 217, 140, .16);
+    }
+    .primary-button:hover { border-color: #69e8a8; background: #69e8a8; }
+    .secondary-button { color: #ced8d1; }
+    .button-icon { margin-right: 7px; }
+
+    .multi-timers {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .group-card {
+      min-width: 0;
+      padding: clamp(15px, 2vw, 24px);
+      border: 1px solid var(--line);
+      border-radius: 19px;
+      background: linear-gradient(145deg, rgba(32, 40, 36, .94), rgba(25, 31, 28, .94));
+      text-align: center;
+    }
+    .group-card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .group-card h3 { margin: 0; font-size: 14px; }
+    .group-badge {
+      padding: 5px 8px;
+      border: 1px solid #3b4b41;
+      border-radius: 20px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .group-ring { width: min(100%, 210px); min-width: 0; margin: 13px auto 8px; }
+    .group-ring .ring-track, .group-ring .ring-progress { stroke-width: 8; }
+    .group-ring .time-display { font-size: clamp(34px, 4.3vw, 58px); }
+    .group-ring .timer-status { margin-top: 9px; font-size: 11px; }
+    .group-ring .timer-status.complete { font-size: 14px; }
+    .group-card .timer-actions { gap: 8px; margin-top: 11px; }
+    .group-card .primary-button, .group-card .secondary-button {
+      min-width: 0;
+      min-height: 39px;
+      padding: 0 12px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .group-card .primary-button .button-icon { margin-right: 4px; }
+    .group-card .group-action { display: none; }
+    .multi-global-actions { display: none; }
+    .is-multi .multi-global-actions { display: flex; justify-content: center; gap: 10px; margin: 21px 0 0; }
+
+    .footer {
+      display: flex;
+      justify-content: center;
+      padding-top: 20px;
+      color: #76827a;
+      font-size: 11px;
+      letter-spacing: .03em;
+    }
+    .footer span + span::before { margin: 0 9px; color: #435047; content: "·"; }
+
+    .urgent .time-display { color: var(--red); }
+    .urgent .ring-progress {
+      stroke: var(--red);
+      filter: drop-shadow(0 0 12px rgba(255, 75, 88, .38));
+    }
+    .urgent .time-display, .urgent .ring-progress { animation: urgent-pulse .8s ease-in-out infinite alternate; }
+    .finished-flash::before {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      background: rgba(255, 63, 78, .16);
+      pointer-events: none;
+      content: "";
+      animation: finish-flash .48s ease-in-out 6 alternate;
+    }
+    @keyframes urgent-pulse { from { opacity: 1; } to { opacity: .52; } }
+    @keyframes finish-flash { from { opacity: .1; } to { opacity: 1; } }
+
+    .app:fullscreen {
+      width: 100%;
+      min-height: 100vh;
+      padding: clamp(16px, 3vw, 44px);
+      background: var(--bg);
+    }
+    .app:fullscreen .settings-panel, .app:fullscreen .footer { display: none; }
+    .app:fullscreen .main-layout { display: block; }
+    .app:fullscreen .timer-area { min-height: calc(100vh - 135px); }
+    .app:fullscreen .ring-shell { width: min(70vh, 75vw, 720px); }
+    .app:fullscreen .multi-timers { max-width: 1120px; margin: 0 auto; }
+    .app:fullscreen .group-ring { width: min(100%, 260px); }
+    .app:fullscreen .group-ring .time-display { font-size: clamp(42px, 5vw, 68px); }
+    .app:fullscreen .multi-global-actions { margin-top: 18px; }
+
+    @media (max-width: 800px) {
+      .app { padding: 20px 20px 24px; }
+      .topbar { margin-bottom: 22px; }
+      .main-layout { grid-template-columns: minmax(250px, 310px) minmax(0, 1fr); gap: 24px; }
+      .settings-panel { padding: 20px; }
+      .ring-shell { width: min(54vh, 42vw, 400px); min-width: 210px; }
+      .time-display { font-size: clamp(55px, 9vw, 88px); }
+      .primary-button, .secondary-button { min-width: 112px; }
+      .multi-timers { gap: 12px; }
+    }
+
+    @media (max-width: 620px) {
+      .app { padding: 16px 16px 20px; }
+      .topbar { margin-bottom: 18px; }
+      .brand { gap: 10px; }
+      .brand-mark { width: 39px; height: 39px; border-radius: 12px; }
+      .brand p { font-size: 10px; }
+      .icon-button { width: 42px; height: 42px; min-height: 42px; padding: 0; font-size: 0; }
+      .icon-button svg { width: 19px; height: 19px; }
+      .main-layout { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+      .settings-panel { width: 100%; padding: 19px; }
+      .settings-panel h2 { margin-bottom: 17px; font-size: 21px; }
+      .mode-switch { margin-bottom: 19px; }
+      .timer-area { width: 100%; padding: 3px 0 12px; }
+      .single-timer { width: 100%; }
+      .timer-kicker { margin-bottom: 13px; }
+      .ring-shell { width: min(76vw, 360px); min-width: 0; }
+      .time-display { font-size: clamp(64px, 17vw, 98px); }
+      .timer-status { margin-top: 12px; font-size: 13px; }
+      .timer-actions { width: 100%; gap: 9px; margin-top: 16px; }
+      .timer-actions button { flex: 1; min-width: 0; }
+      .multi-timers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .group-card { padding: 13px 9px; border-radius: 15px; }
+      .group-card h3 { font-size: 12px; }
+      .group-badge { padding: 4px 6px; font-size: 9px; }
+      .group-ring { width: min(100%, 160px); margin: 10px auto 3px; }
+      .group-ring .time-display { font-size: clamp(31px, 8vw, 43px); }
+      .group-ring .timer-actions { gap: 5px; }
+      .group-card .primary-button, .group-card .secondary-button { padding: 0 8px; font-size: 11px; }
+      .group-card .button-icon { display: none; }
+      .is-multi .multi-global-actions button { flex: 1; min-width: 0; }
+      .footer { padding-top: 10px; font-size: 10px; }
+      .app:fullscreen { padding: 14px; }
+      .app:fullscreen .timer-area { min-height: calc(100vh - 82px); }
+      .app:fullscreen .ring-shell { width: min(68vh, 84vw, 560px); }
+      .app:fullscreen .multi-timers { gap: 8px; }
+      .app:fullscreen .group-ring { width: min(100%, 190px); }
+    }
+
+    @media (max-width: 370px) {
+      .brand p { display: none; }
+      .settings-panel { padding: 16px; }
+      .multi-timers { grid-template-columns: 1fr; }
+      .group-ring { width: min(60vw, 190px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6M12 2v3"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>課堂小組計時器</h1>
+          <p>讓每一段學習，都剛剛好</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button" id="fullscreenButton" type="button" aria-label="進入全螢幕" title="全螢幕展示">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"></path>
+          </svg>
+          全螢幕
+        </button>
+      </div>
+    </header>
+
+    <section class="main-layout" id="mainLayout">
+      <aside class="settings-panel" aria-label="計時器設定">
+        <p class="eyebrow">CLASSROOM TIMER</p>
+        <h2>準備開始活動</h2>
+        <div class="mode-switch" role="group" aria-label="計時模式">
+          <button class="mode-button" id="countdownMode" type="button" aria-pressed="true">倒數計時</button>
+          <button class="mode-button" id="stopwatchMode" type="button" aria-pressed="false">正數碼錶</button>
+        </div>
+
+        <div id="durationSettings">
+          <label class="field-label" for="minutesInput">設定活動時間</label>
+          <div class="time-inputs">
+            <div class="input-wrap">
+              <input id="minutesInput" type="number" inputmode="numeric" min="0" max="999" step="1" value="1" aria-label="分鐘">
+              <span>分鐘</span>
+            </div>
+            <div class="input-wrap">
+              <input id="secondsInput" type="number" inputmode="numeric" min="0" max="59" step="1" value="0" aria-label="秒數">
+              <span>秒</span>
+            </div>
+          </div>
+          <p class="input-error" id="durationError" role="alert" hidden></p>
+          <div class="preset-heading"><span>快速設定</span><span>一鍵套用時間</span></div>
+          <div class="preset-grid" role="group" aria-label="快速設定時間">
+            <button class="preset-button" type="button" data-minutes="1" aria-pressed="true">1 分鐘</button>
+            <button class="preset-button" type="button" data-minutes="3" aria-pressed="false">3 分鐘</button>
+            <button class="preset-button" type="button" data-minutes="5" aria-pressed="false">5 分鐘</button>
+            <button class="preset-button" type="button" data-minutes="10" aria-pressed="false">10 分鐘</button>
+            <button class="preset-button" type="button" data-minutes="15" aria-pressed="false">15 分鐘</button>
+            <button class="preset-button" type="button" data-minutes="20" aria-pressed="false">20 分鐘</button>
+          </div>
+        </div>
+
+        <label class="multi-toggle" for="multiToggle">
+          <span class="toggle-copy"><strong>多組計時</strong><small>同時管理四個小組的進度</small></span>
+          <input id="multiToggle" type="checkbox">
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+        <p class="keyboard-hint">快捷鍵：<kbd>Space</kbd> 開始／暫停　<kbd>R</kbd> 重設</p>
+      </aside>
+
+      <section class="timer-area" aria-label="計時器">
+        <div class="single-timer" id="singleTimer">
+          <p class="timer-kicker" id="timerKicker">活動倒數</p>
+          <div class="ring-shell" id="singleRingShell">
+            <svg class="ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+              <defs>
+                <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#81f0b5"></stop>
+                  <stop offset="100%" stop-color="#35d98c"></stop>
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="120" cy="120" r="105"></circle>
+              <circle class="ring-progress" id="singleProgress" cx="120" cy="120" r="105"></circle>
+            </svg>
+            <div class="timer-content">
+              <div class="time-display" id="singleDisplay" role="timer" aria-live="off">01:00</div>
+              <p class="timer-status" id="singleStatus" aria-live="polite">準備就緒</p>
+            </div>
+          </div>
+          <div class="control-row timer-actions">
+            <button class="primary-button" id="mainStartButton" type="button"><span class="button-icon">▶</span>開始</button>
+            <button class="secondary-button" id="mainResetButton" type="button"><span class="button-icon">↺</span>重設</button>
+          </div>
+        </div>
+
+        <div class="multi-timers" id="multiTimers" aria-label="四組小組計時器"></div>
+        <div class="multi-global-actions control-row">
+          <button class="primary-button" id="allStartButton" type="button">▶ 全部開始</button>
+          <button class="secondary-button" id="allResetButton" type="button">↺ 全部重設</button>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer"><span>專注當下</span><span>一起完成</span><span>每組都精彩</span></footer>
+    <div id="announcement" class="visually-hidden" aria-live="assertive"></div>
+  </main>
+
+  <style>
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "classroom-group-timer-settings-v1";
+      const CIRCUMFERENCE = 2 * Math.PI * 105;
+      const GROUPS = ["第一組", "第二組", "第三組", "第四組"];
+      const defaultSettings = { minutes: 1, seconds: 0, mode: "countdown", multi: false, preset: 1 };
+      const timers = [];
+      let mode = defaultSettings.mode;
+      let multiMode = defaultSettings.multi;
+      let configuredDurationMs = 60_000;
+      let renderTimer = null;
+      let alarmAudioContext = null;
+      let flashTimeout = null;
+
+      const app = document.getElementById("app");
+      const minutesInput = document.getElementById("minutesInput");
+      const secondsInput = document.getElementById("secondsInput");
+      const durationError = document.getElementById("durationError");
+      const durationSettings = document.getElementById("durationSettings");
+      const multiToggle = document.getElementById("multiToggle");
+      const singleDisplay = document.getElementById("singleDisplay");
+      const singleStatus = document.getElementById("singleStatus");
+      const singleProgress = document.getElementById("singleProgress");
+      const singleRingShell = document.getElementById("singleRingShell");
+      const mainStartButton = document.getElementById("mainStartButton");
+      const announcement = document.getElementById("announcement");
+      const presetButtons = [...document.querySelectorAll(".preset-button")];
+
+      function readSettings() {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (!stored) return { ...defaultSettings };
+          const parsed = JSON.parse(stored);
+          const minutes = Number.isInteger(parsed.minutes) && parsed.minutes >= 0 && parsed.minutes <= 999 ? parsed.minutes : defaultSettings.minutes;
+          const seconds = Number.isInteger(parsed.seconds) && parsed.seconds >= 0 && parsed.seconds <= 59 ? parsed.seconds : defaultSettings.seconds;
+          const preset = [1, 3, 5, 10, 15, 20].includes(parsed.preset) ? parsed.preset : null;
+          return {
+            minutes,
+            seconds,
+            mode: parsed.mode === "stopwatch" ? "stopwatch" : "countdown",
+            multi: parsed.multi === true,
+            preset
+          };
+        } catch (error) {
+          console.warn("無法讀取已保存的計時器設定。", error);
+          return { ...defaultSettings };
+        }
+      }
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            minutes: Number(minutesInput.value),
+            seconds: Number(secondsInput.value),
+            mode,
+            multi: multiMode,
+            preset: selectedPreset()
+          }));
+        } catch (error) {
+          console.warn("無法保存計時器設定。", error);
+        }
+      }
+
+      function selectedPreset() {
+        const selected = presetButtons.find(button => button.getAttribute("aria-pressed") === "true");
+        return selected ? Number(selected.dataset.minutes) : null;
+      }
+
+      function formatTime(totalSeconds) {
+        const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+        const minutes = Math.floor(safeSeconds / 60);
+        const seconds = safeSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function formatElapsed(milliseconds) {
+        return formatTime(Math.floor(milliseconds / 1000));
+      }
+
+      function getConfiguredDuration() {
+        const minutes = Number(minutesInput.value);
+        const seconds = Number(secondsInput.value);
+        if (!Number.isInteger(minutes) || minutes < 0 || minutes > 999 ||
+            !Number.isInteger(seconds) || seconds < 0 || seconds > 59) {
+          return null;
+        }
+        return (minutes * 60 + seconds) * 1000;
+      }
+
+      function syncDurationFromInputs(updateAll = true) {
+        const duration = getConfiguredDuration();
+        if (duration === null) {
+          minutesInput.setAttribute("aria-invalid", "true");
+          secondsInput.setAttribute("aria-invalid", "true");
+          durationError.textContent = "請輸入 0–999 的整數分鐘，以及 0–59 的整數秒數。";
+          durationError.hidden = false;
+          return false;
+        }
+        if (duration === 0 && mode === "countdown") {
+          minutesInput.setAttribute("aria-invalid", "true");
+          secondsInput.setAttribute("aria-invalid", "true");
+          durationError.textContent = "倒數時間必須大於 0 秒。";
+          durationError.hidden = false;
+          return false;
+        }
+        minutesInput.removeAttribute("aria-invalid");
+        secondsInput.removeAttribute("aria-invalid");
+        durationError.hidden = true;
+        configuredDurationMs = duration;
+        presetButtons.forEach(button => button.setAttribute("aria-pressed", "false"));
+        if (updateAll) {
+          timers.forEach(timer => {
+            if (!timer.running) resetTimer(timer, false);
+          });
+        }
+        saveSettings();
+        render();
+        return true;
+      }
+
+      function createTimer(name, element, isMain = false) {
+        return {
+          name,
+          element,
+          isMain,
+          running: false,
+          finished: false,
+          endTime: null,
+          startedAt: null,
+          remainingMs: configuredDurationMs,
+          elapsedBeforeStart: 0,
+          durationMs: configuredDurationMs,
+          animationFrame: null,
+          display: element.querySelector(".time-display"),
+          status: element.querySelector(".timer-status"),
+          progress: element.querySelector(".ring-progress"),
+          startButton: element.querySelector(isMain ? "#mainStartButton" : ".group-start"),
+          urgent: false
+        };
+      }
+
+      function makeGroupCards() {
+        const container = document.getElementById("multiTimers");
+        container.innerHTML = "";
+        GROUPS.forEach((name, index) => {
+          const card = document.createElement("article");
+          card.className = "group-card";
+          card.innerHTML = `
+            <header><h3>${name}</h3><span class="group-badge">討論中</span></header>
+            <div class="ring-shell group-ring">
+              <svg class="ring-svg" viewBox="0 0 240 240" aria-hidden="true">
+                <circle class="ring-track" cx="120" cy="120" r="105"></circle>
+                <circle class="ring-progress" cx="120" cy="120" r="105"></circle>
+              </svg>
+              <div class="timer-content">
+                <div class="time-display" role="timer" aria-live="off">01:00</div>
+                <p class="timer-status" aria-live="polite">準備就緒</p>
+              </div>
+            </div>
+            <div class="control-row timer-actions">
+              <button class="primary-button group-start" type="button" aria-label="開始${name}計時"><span class="button-icon">▶</span>開始</button>
+              <button class="secondary-button group-reset" type="button" aria-label="重設${name}計時">↺ 重設</button>
+            </div>`;
+          container.appendChild(card);
+          const timer = createTimer(name, card);
+          timer.index = index;
+          timers.push(timer);
+          card.querySelector(".group-start").addEventListener("click", () => toggleTimer(timer));
+          card.querySelector(".group-reset").addEventListener("click", () => resetTimer(timer));
+        });
+      }
+
+      function timerElapsed(timer, now = Date.now()) {
+        if (timer.running) return timer.elapsedBeforeStart + (now - timer.startedAt);
+        return timer.elapsedBeforeStart;
+      }
+
+      function timerRemaining(timer, now = Date.now()) {
+        return timer.running ? Math.max(0, timer.endTime - now) : Math.max(0, timer.remainingMs);
+      }
+
+      function clearTimerFrame(timer) {
+        if (timer.animationFrame !== null) {
+          cancelAnimationFrame(timer.animationFrame);
+          timer.animationFrame = null;
+        }
+      }
+
+      function startTimer(timer) {
+        if (timer.running) return;
+        if (mode === "countdown") {
+          const requestedDuration = getConfiguredDuration();
+          if (requestedDuration === null || requestedDuration === 0) {
+            syncDurationFromInputs();
+            return;
+          }
+          if (requestedDuration !== configuredDurationMs) syncDurationFromInputs();
+        }
+        if (timer.finished || (!timer.isMain && timer.remainingMs <= 0)) resetTimer(timer, false);
+        if (mode === "stopwatch") {
+          timer.startedAt = Date.now();
+          timer.running = true;
+          timer.finished = false;
+        } else {
+          const remainingMs = timer.remainingMs;
+          if (remainingMs <= 0) return;
+          timer.endTime = Date.now() + remainingMs;
+          timer.startedAt = Date.now();
+          timer.running = true;
+          timer.finished = false;
+        }
+        unlockAudio();
+        scheduleRender();
+        render();
+      }
+
+      function pauseTimer(timer) {
+        if (!timer.running) return;
+        const now = Date.now();
+        if (mode === "stopwatch") {
+          timer.elapsedBeforeStart += now - timer.startedAt;
+        } else {
+          timer.remainingMs = Math.max(0, timer.endTime - now);
+        }
+        timer.running = false;
+        timer.startedAt = null;
+        timer.endTime = null;
+        clearTimerFrame(timer);
+        render();
+      }
+
+      function toggleTimer(timer) {
+        if (timer.running) pauseTimer(timer);
+        else startTimer(timer);
+      }
+
+      function resetTimer(timer, shouldRender = true) {
+        clearTimerFrame(timer);
+        if (timer.finished) clearFinishedFlash();
+        timer.running = false;
+        timer.finished = false;
+        timer.endTime = null;
+        timer.startedAt = null;
+        timer.remainingMs = mode === "stopwatch" ? 0 : configuredDurationMs;
+        timer.elapsedBeforeStart = 0;
+        timer.durationMs = configuredDurationMs;
+        timer.urgent = false;
+        if (shouldRender) render();
+      }
+
+      function resetAllTimers() {
+        activeTimers().forEach(timer => resetTimer(timer, false));
+        clearFinishedFlash();
+        render();
+      }
+
+      function activeTimers() {
+        return multiMode ? timers.slice(1) : [timers[0]];
+      }
+
+      function startAllTimers() {
+        activeTimers().forEach(timer => {
+          if (!timer.running) startTimer(timer);
+        });
+      }
+
+      function pauseAllTimers() {
+        activeTimers().forEach(timer => pauseTimer(timer));
+      }
+
+      function ringRatio(timer, now) {
+        if (mode === "stopwatch") {
+          const elapsed = timerElapsed(timer, now);
+          return (elapsed % 60_000) / 60_000;
+        }
+        if (timer.durationMs <= 0) return 0;
+        return timerRemaining(timer, now) / timer.durationMs;
+      }
+
+      function statusText(timer) {
+        if (timer.finished) return "時間到！";
+        if (timer.running) return mode === "stopwatch" ? "碼錶進行中" : "活動進行中";
+        if (mode === "stopwatch" && timer.elapsedBeforeStart > 0) return "已暫停";
+        if (mode === "stopwatch") return "準備就緒";
+        if (timer.remainingMs < timer.durationMs) return "已暫停";
+        return "準備就緒";
+      }
+
+      function updateTimer(timer, now) {
+        if (timer.running && mode !== "stopwatch" && now >= timer.endTime) {
+          timer.remainingMs = 0;
+          timer.running = false;
+          timer.finished = true;
+          timer.endTime = null;
+          timer.startedAt = null;
+          timer.elapsedBeforeStart = timer.durationMs;
+          timer.urgent = false;
+          clearTimerFrame(timer);
+          playAlarm();
+          triggerFinishedFlash();
+          announcement.textContent = `${timer.name}時間到！`;
+        }
+
+        const isStopwatch = mode === "stopwatch";
+        const remainingMs = isStopwatch ? 0 : timerRemaining(timer, now);
+        const totalSeconds = isStopwatch
+          ? Math.floor(timerElapsed(timer, now) / 1000)
+          : timer.running ? Math.ceil(remainingMs / 1000) : Math.ceil(timer.remainingMs / 1000);
+        const ratio = Math.max(0, Math.min(1, ringRatio(timer, now)));
+        const offset = CIRCUMFERENCE * (1 - ratio);
+        const urgent = !isStopwatch && timer.running && remainingMs > 0 && remainingMs <= 10_000;
+        timer.urgent = urgent;
+
+        timer.display.textContent = formatTime(totalSeconds);
+        timer.progress.style.strokeDasharray = String(CIRCUMFERENCE);
+        timer.progress.style.strokeDashoffset = String(offset);
+        timer.element.classList.toggle("urgent", urgent);
+        timer.status.textContent = statusText(timer);
+        timer.status.classList.toggle("complete", timer.finished);
+        timer.status.classList.toggle("running", timer.running);
+
+        if (timer.startButton) {
+          const paused = timer.running;
+          timer.startButton.innerHTML = paused
+            ? '<span class="button-icon">Ⅱ</span>暫停'
+            : '<span class="button-icon">▶</span>開始';
+          timer.startButton.setAttribute("aria-label", `${paused ? "暫停" : "開始"}${timer.isMain ? "計時" : timer.name + "計時"}`);
+        }
+      }
+
+      function render() {
+        const now = Date.now();
+        timers.forEach(timer => updateTimer(timer, now));
+        app.classList.toggle("is-multi", multiMode);
+        document.getElementById("singleTimer").hidden = multiMode;
+        document.getElementById("multiTimers").hidden = !multiMode;
+        document.querySelector(".multi-global-actions").hidden = !multiMode;
+        durationSettings.hidden = mode === "stopwatch";
+        document.getElementById("countdownMode").setAttribute("aria-pressed", String(mode === "countdown"));
+        document.getElementById("stopwatchMode").setAttribute("aria-pressed", String(mode === "stopwatch"));
+        document.getElementById("timerKicker").textContent = mode === "stopwatch" ? "活動碼錶" : "活動倒數";
+        mainStartButton.innerHTML = timers[0].running
+          ? '<span class="button-icon">Ⅱ</span>暫停'
+          : '<span class="button-icon">▶</span>開始';
+        mainStartButton.setAttribute("aria-label", timers[0].running ? "暫停計時" : "開始計時");
+        document.getElementById("allStartButton").textContent = activeTimers().some(timer => timer.running) ? "Ⅱ 全部暫停" : "▶ 全部開始";
+      }
+
+      function scheduleRender() {
+        if (renderTimer !== null) return;
+        const tick = () => {
+          renderTimer = null;
+          const now = Date.now();
+          timers.forEach(timer => {
+            if (timer.running) updateTimer(timer, now);
+          });
+          if (timers.some(timer => timer.running)) {
+            renderTimer = window.setTimeout(tick, 50);
+          }
+        };
+        renderTimer = window.setTimeout(tick, 50);
+      }
+
+      function clearFinishedFlash() {
+        document.body.classList.remove("finished-flash");
+        if (flashTimeout !== null) {
+          window.clearTimeout(flashTimeout);
+          flashTimeout = null;
+        }
+      }
+
+      function triggerFinishedFlash() {
+        clearFinishedFlash();
+        document.body.classList.remove("finished-flash");
+        void document.body.offsetWidth;
+        document.body.classList.add("finished-flash");
+        flashTimeout = window.setTimeout(() => {
+          document.body.classList.remove("finished-flash");
+          flashTimeout = null;
+        }, 2900);
+      }
+
+      function unlockAudio() {
+        const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextConstructor) return;
+        if (!alarmAudioContext) alarmAudioContext = new AudioContextConstructor();
+        if (alarmAudioContext.state === "suspended") {
+          alarmAudioContext.resume().catch(error => console.warn("無法啟用響鈴音效。", error));
+        }
+      }
+
+      function playAlarm() {
+        if (!window.AudioContext && !window.webkitAudioContext) {
+          console.warn("此瀏覽器不支援 Web Audio API，無法播放響鈴。");
+          return;
+        }
+        unlockAudio();
+        if (!alarmAudioContext) return;
+        const now = alarmAudioContext.currentTime;
+        [0, 0.42, 0.84].forEach(delay => {
+          const oscillator = alarmAudioContext.createOscillator();
+          const gain = alarmAudioContext.createGain();
+          oscillator.type = "sine";
+          oscillator.frequency.setValueAtTime(880, now + delay);
+          oscillator.frequency.setValueAtTime(660, now + delay + 0.18);
+          gain.gain.setValueAtTime(0.0001, now + delay);
+          gain.gain.exponentialRampToValueAtTime(0.22, now + delay + 0.025);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.34);
+          oscillator.connect(gain);
+          gain.connect(alarmAudioContext.destination);
+          oscillator.start(now + delay);
+          oscillator.stop(now + delay + 0.36);
+        });
+      }
+
+      function setMode(nextMode) {
+        if (mode === nextMode) return;
+        mode = nextMode;
+        timers.forEach(timer => resetTimer(timer, false));
+        if (mode === "stopwatch") timers.forEach(timer => { timer.remainingMs = 0; });
+        saveSettings();
+        render();
+      }
+
+      function setMultiMode(enabled) {
+        timers.forEach(timer => pauseTimer(timer));
+        multiMode = enabled;
+        multiToggle.checked = enabled;
+        saveSettings();
+        render();
+      }
+
+      function setPreset(minutes) {
+        minutesInput.value = String(minutes);
+        secondsInput.value = "0";
+        presetButtons.forEach(button => {
+          button.setAttribute("aria-pressed", String(Number(button.dataset.minutes) === minutes));
+        });
+        syncDurationFromInputs();
+      }
+
+      function toggleFullscreen() {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(error => console.warn("無法離開全螢幕模式。", error));
+          return;
+        }
+        if (app.requestFullscreen) {
+          app.requestFullscreen().catch(error => console.warn("無法進入全螢幕模式。", error));
+        }
+      }
+
+      makeGroupCards();
+      const mainTimer = createTimer("活動", document.getElementById("singleTimer"), true);
+      timers.unshift(mainTimer);
+      mainTimer.progress.style.strokeDasharray = String(CIRCUMFERENCE);
+
+      const settings = readSettings();
+      minutesInput.value = String(settings.minutes);
+      secondsInput.value = String(settings.seconds);
+      mode = settings.mode;
+      configuredDurationMs = (settings.minutes * 60 + settings.seconds) * 1000;
+      timers.forEach(timer => {
+        timer.durationMs = configuredDurationMs;
+        timer.remainingMs = mode === "stopwatch" ? 0 : configuredDurationMs;
+      });
+      multiMode = settings.multi;
+      multiToggle.checked = multiMode;
+      if (settings.preset !== null && settings.seconds === 0 && settings.minutes === settings.preset) {
+        presetButtons.forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.minutes) === settings.preset)));
+      } else {
+        presetButtons.forEach(button => button.setAttribute("aria-pressed", "false"));
+      }
+
+      document.getElementById("countdownMode").addEventListener("click", () => setMode("countdown"));
+      document.getElementById("stopwatchMode").addEventListener("click", () => setMode("stopwatch"));
+      presetButtons.forEach(button => button.addEventListener("click", () => setPreset(Number(button.dataset.minutes))));
+      minutesInput.addEventListener("change", () => syncDurationFromInputs());
+      secondsInput.addEventListener("change", () => syncDurationFromInputs());
+      minutesInput.addEventListener("input", () => presetButtons.forEach(button => button.setAttribute("aria-pressed", "false")));
+      secondsInput.addEventListener("input", () => presetButtons.forEach(button => button.setAttribute("aria-pressed", "false")));
+      multiToggle.addEventListener("change", () => setMultiMode(multiToggle.checked));
+      mainStartButton.addEventListener("click", () => toggleTimer(mainTimer));
+      document.getElementById("mainResetButton").addEventListener("click", () => resetTimer(mainTimer));
+      document.getElementById("allStartButton").addEventListener("click", () => {
+        if (activeTimers().some(timer => timer.running)) pauseAllTimers();
+        else startAllTimers();
+      });
+      document.getElementById("allResetButton").addEventListener("click", resetAllTimers);
+      document.getElementById("fullscreenButton").addEventListener("click", toggleFullscreen);
+      document.addEventListener("fullscreenchange", () => {
+        const button = document.getElementById("fullscreenButton");
+        const isFullscreen = Boolean(document.fullscreenElement);
+        button.setAttribute("aria-label", isFullscreen ? "離開全螢幕" : "進入全螢幕");
+        button.title = isFullscreen ? "離開全螢幕" : "全螢幕展示";
+      });
+      document.addEventListener("keydown", event => {
+        if (event.code === "Space" && !event.repeat && !event.target.matches("input, textarea, select, button")) {
+          event.preventDefault();
+          if (multiMode) {
+            if (activeTimers().some(timer => timer.running)) pauseAllTimers();
+            else startAllTimers();
+          } else {
+            toggleTimer(mainTimer);
+          }
+        }
+        if (event.key.toLowerCase() === "r" && !event.repeat && !event.target.matches("input, textarea, select")) {
+          if (multiMode) resetAllTimers();
+          else resetTimer(mainTimer);
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          render();
+          if (activeTimers().some(timer => timer.running)) scheduleRender();
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
