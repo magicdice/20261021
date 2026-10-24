@@ -35,17 +35,48 @@
       </a>
       <div class="header-controls">
         <p class="header-note">選擇工具開始使用</p>
-        <label class="theme-control" for="theme-select">
-          <span>主題</span>
+        <label class="theme-control" data-theme-preference="system">
+          <span class="visually-hidden">選擇色彩主題</span>
           <select id="theme-select" aria-label="選擇色彩主題">
             <option value="system">跟隨系統</option>
             <option value="light">淺色</option>
             <option value="dark">深色</option>
           </select>
+          <svg class="theme-icon theme-icon-system" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3.5" y="4" width="17" height="12" rx="2"></rect>
+            <path d="M8 20h8m-4-4v4"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"></path>
+          </svg>
         </label>
       </div>
     </header>
-    <nav class="tool-navigation" id="tool-navigation" aria-label="課堂工具" role="tablist"></nav>
+    <div class="navigation-dock" id="navigation-dock" data-expanded="false">
+      <button
+        class="navigation-toggle"
+        id="navigation-toggle"
+        type="button"
+        aria-label="開啟課堂工具"
+        aria-controls="tool-navigation"
+        aria-expanded="false"
+      >
+        <svg class="navigation-open-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="6" height="6" rx="1"></rect>
+          <rect x="14.5" y="3.5" width="6" height="6" rx="1"></rect>
+          <rect x="3.5" y="14.5" width="6" height="6" rx="1"></rect>
+          <rect x="14.5" y="14.5" width="6" height="6" rx="1"></rect>
+        </svg>
+        <svg class="navigation-close-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+      <nav class="tool-navigation" id="tool-navigation" aria-label="課堂工具" role="tablist"></nav>
+    </div>
     <main id="tool-panels" class="tool-panels"></main>
     <p id="app-status" class="app-status" role="status" aria-live="polite"></p>
   </div>
