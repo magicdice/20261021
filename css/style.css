@@ -100,19 +100,6 @@ button { font: inherit; }
 
 .tool-panel {
   min-height: calc(100vh - 128px);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: #101522;
-}
-
-.tool-frame {
-  display: block;
-  width: 100%;
-  height: calc(100vh - 130px);
-  min-height: 540px;
-  border: 0;
-  background: #101522;
 }
 
 .app-status {
@@ -131,6 +118,5 @@ button { font: inherit; }
   .header-note { display: none; }
   .tool-navigation { margin-right: -8px; }
   .tool-tab { min-height: 40px; padding: 8px 11px; }
-  .tool-panel { min-height: calc(100vh - 116px); border-radius: 12px; }
-  .tool-frame { height: calc(100vh - 118px); min-height: 500px; }
+  .tool-panel { min-height: calc(100vh - 116px); }
 }
