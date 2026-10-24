@@ -443,3 +443,129 @@ html[data-theme="light"] .tool-root[data-tool-root="irs"] .choice-button {
   background: #f6f8fb;
   color: var(--text);
 }
+
+html[data-theme="dark"] .tool-root[data-tool-root="draw"] {
+  --bg: var(--tool-bg);
+  --panel: var(--tool-surface);
+  --panel-soft: var(--tool-surface-raised);
+  --border: var(--tool-border);
+  --text: var(--tool-text);
+  --muted: var(--tool-muted);
+  --accent: var(--tool-accent);
+}
+
+html[data-theme="dark"] .tool-root[data-tool-root="clock"] {
+  --bg: var(--tool-bg);
+  --panel: var(--tool-surface);
+  --panel-soft: var(--tool-surface-raised);
+  --line: var(--tool-border);
+  --text: var(--tool-text);
+  --muted: var(--tool-muted);
+}
+
+html[data-theme="dark"] .tool-root[data-tool-root="timer"] {
+  --bg: var(--tool-bg);
+  --surface: var(--tool-surface);
+  --surface-raised: var(--tool-surface-raised);
+  --line: var(--tool-border);
+  --text: var(--tool-text);
+  --muted: var(--tool-muted);
+}
+
+html[data-theme="dark"] .tool-root[data-tool-root="score"] {
+  --page: var(--tool-bg);
+  --panel: var(--tool-surface);
+  --panel-raised: var(--tool-surface-raised);
+  --line: var(--tool-border);
+  --text: var(--tool-text);
+  --muted: var(--tool-muted);
+}
+
+html[data-theme="dark"] .tool-root[data-tool-root="board"] {
+  --panel: var(--tool-surface);
+  --border: var(--tool-border);
+  --muted: var(--tool-muted);
+}
+
+html[data-theme="dark"] .tool-root[data-tool-root="irs"] {
+  --bg: var(--tool-bg);
+  --panel: var(--tool-surface);
+  --panel-2: var(--tool-surface-raised);
+  --line: var(--tool-border);
+  --text: var(--tool-text);
+  --muted: var(--tool-muted);
+}
+
+html[data-theme] .tool-root {
+  min-width: 0;
+  border: 1px solid var(--tool-border);
+  border-radius: 20px;
+  box-shadow: var(--tool-shadow);
+}
+
+html[data-theme] .tool-root[data-tool-root="draw"],
+html[data-theme] .tool-root[data-tool-root="clock"],
+html[data-theme] .tool-root[data-tool-root="timer"],
+html[data-theme] .tool-root[data-tool-root="score"],
+html[data-theme] .tool-root[data-tool-root="board"],
+html[data-theme] .tool-root[data-tool-root="irs"] {
+  background: radial-gradient(ellipse at 50% 0, var(--page-glow), transparent 52%), var(--tool-bg);
+}
+
+html[data-theme] .tool-root[data-tool-root="draw"] .settings,
+html[data-theme] .tool-root[data-tool-root="draw"] .main-panel,
+html[data-theme] .tool-root[data-tool-root="draw"] .history-panel,
+html[data-theme] .tool-root[data-tool-root="clock"] .card,
+html[data-theme] .tool-root[data-tool-root="timer"] .settings-panel,
+html[data-theme] .tool-root[data-tool-root="timer"] .group-card,
+html[data-theme] .tool-root[data-tool-root="score"] .panel,
+html[data-theme] .tool-root[data-tool-root="score"] .control-card,
+html[data-theme] .tool-root[data-tool-root="board"] .toolbar,
+html[data-theme] .tool-root[data-tool-root="irs"] .panel {
+  border-color: var(--tool-border);
+  border-radius: 16px;
+  background: var(--tool-surface);
+  box-shadow: var(--tool-shadow);
+}
+
+html[data-theme] .tool-root[data-tool-root="draw"] .history-entry,
+html[data-theme] .tool-root[data-tool-root="timer"] .mode-switch,
+html[data-theme] .tool-root[data-tool-root="timer"] .input-wrap input,
+html[data-theme] .tool-root[data-tool-root="score"] .control-card,
+html[data-theme] .tool-root[data-tool-root="irs"] .field input,
+html[data-theme] .tool-root[data-tool-root="irs"] .field textarea,
+html[data-theme] .tool-root[data-tool-root="irs"] .field select,
+html[data-theme] .tool-root[data-tool-root="irs"] .student-status {
+  border-color: var(--tool-border);
+  background: var(--tool-surface-input);
+}
+
+html[data-theme] .tool-root[data-tool-root="irs"] #irs-qrcode:empty {
+  display: none;
+}
+
+html[data-theme] .tool-root[data-tool-root="irs"] .panel-inner {
+  padding: clamp(16px, 1.8vw, 24px);
+}
+
+html[data-theme] .tool-root[data-tool-root="timer"] .group-ring {
+  width: min(100%, 210px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  html[data-theme] .tool-root[data-tool-root="irs"] .teacher-grid {
+    gap: 14px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="irs"] .room-card {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  html[data-theme] .tool-root[data-tool-root="clock"] .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
