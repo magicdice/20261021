@@ -569,3 +569,133 @@ html[data-theme] .tool-root[data-tool-root="timer"] .group-ring {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+@media (max-width: 800px) {
+  html[data-theme] .tool-root[data-tool-root="timer"] .main-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .tool-root[data-tool-root="timer"] .settings-panel {
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="timer"] .ring-shell {
+    width: min(68vw, 420px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  html[data-theme] .tool-root button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="draw"] .topbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="draw"] .header-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="draw"] .sound-toggle,
+  html[data-theme] .tool-root[data-tool-root="draw"] .tab-button {
+    min-height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="clock"] .topbar {
+    align-items: stretch;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="clock"] .button.small {
+    min-height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="clock"] .top-actions {
+    flex-wrap: wrap;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="clock"] .exam-summary {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="score"] .topbar {
+    flex-direction: column;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="score"] .toolbar {
+    justify-content: flex-start;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="score"] .team-name-button,
+  html[data-theme] .tool-root[data-tool-root="score"] .team-footer .text-button,
+  html[data-theme] .tool-root[data-tool-root="score"] .member-row button {
+    min-height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] .color-grid {
+    gap: 3px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] .color-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="timer"] .preset-button,
+  html[data-theme] .tool-root[data-tool-root="timer"] .icon-button,
+  html[data-theme] .tool-root[data-tool-root="timer"] .group-card .primary-button,
+  html[data-theme] .tool-root[data-tool-root="timer"] .group-card .secondary-button {
+    min-height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="timer"] .icon-button {
+    width: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="irs"] .mode-tabs button {
+    min-height: 44px;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="irs"] .button-row > .button {
+    flex: 1 1 auto;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] #board-status {
+    right: 12px;
+    bottom: 72px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    text-align: center;
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] .toolbar-toggle {
+    left: min(252px, calc(100vw - 83px));
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] .toolbar:not(.collapsed) ~ .toolbar-toggle {
+    left: min(252px, calc(100vw - 83px));
+  }
+
+  html[data-theme] .tool-root[data-tool-root="board"] .toolbar-toggle.is-collapsed {
+    left: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  html[data-theme] .tool-root[data-tool-root="timer"] .multi-timers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .tool-root[data-tool-root="irs"] .panel-inner {
+    padding: 14px;
+  }
+}

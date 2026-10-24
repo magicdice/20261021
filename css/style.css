@@ -141,21 +141,43 @@ button { font: inherit; }
 
 @media (max-width: 600px) {
   .app-shell { padding: 12px 10px 18px; }
-  .site-header { align-items: center; gap: 10px; margin-bottom: 12px; padding: 2px 0 13px; }
+  .site-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 2px 0 13px;
+  }
   .brand { gap: 9px; }
   .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 19px; }
   .brand strong { font-size: 17px; }
   .brand small { font-size: 11px; }
-  .header-controls { gap: 0; }
+  .header-controls { width: 100%; gap: 0; }
   .header-note { display: none; }
-  .theme-control { gap: 6px; font-size: 12px; }
-  .theme-control select { min-width: 112px; min-height: 40px; padding: 6px 26px 6px 9px; }
+  .theme-control {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    font-size: 13px;
+  }
+  .theme-control select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 7px 30px 7px 10px;
+    font-size: 16px;
+    line-height: 1.25;
+  }
+  .theme-control select option {
+    font-size: 16px;
+  }
   .tool-navigation { margin-right: -10px; padding-bottom: 9px; }
-  .tool-tab { min-height: 42px; padding: 8px 13px; }
+  .tool-tab { min-height: 44px; padding: 8px 13px; }
   .tool-panel { min-height: calc(100vh - 110px); }
 }
 
 @media (max-width: 380px) {
-  .brand small { display: none; }
-  .theme-control select { min-width: 106px; }
+  .brand small { font-size: 10px; }
 }
